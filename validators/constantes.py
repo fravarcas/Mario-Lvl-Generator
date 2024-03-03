@@ -1,4 +1,4 @@
 #Propiedades mario
 
-distancia_salto_horizontal_max = 11
-distancia_salto_vertical_max = 4
+max_horizontal_jump_length = 11
+max_vertical_jump_length = 4

@@ -9,10 +9,20 @@ unbeatable_wall_file_path = os.path.join(current_directory,  "validators", "test
 
 def test_pit_validator():
 
-    assert validar_fosos_pasables(beatable_pit_file_path) == True
-    assert validar_fosos_pasables(unbeatable_pit_file_path) == False
+    is_beatable_true, num_unbeatable_pits_true = validate_beatable_pit(beatable_pit_file_path)
+    is_beatable_false, num_unbeatable_pits_false = validate_beatable_pit(unbeatable_pit_file_path)
+
+    assert is_beatable_true
+    assert num_unbeatable_pits_true == 0
+    assert not is_beatable_false
+    assert num_unbeatable_pits_false == 3
 
 def test_wall_validator():
 
-    assert validar_paredes_pasables(beatable_wall_file_path) == True
-    assert validar_paredes_pasables(unbeatable_wall_file_path) == False
+    is_beatable_true, num_unbeatable_walls_true = validate_beatable_walls(beatable_wall_file_path)
+    is_beatable_false, num_unbeatable_walls_false = validate_beatable_walls(unbeatable_wall_file_path)
+
+    assert is_beatable_true
+    assert num_unbeatable_walls_true == 0
+    assert not is_beatable_false
+    assert num_unbeatable_walls_false == 4
