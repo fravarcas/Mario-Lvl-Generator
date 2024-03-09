@@ -66,6 +66,21 @@ def create_encoded_matrix(file_name, encoding):
     except FileNotFoundError:
         print(f"The file '{file_name}' was not found.")
         return None
+      
+def decode_matrix(matrix, block_codification, output_file):
+  
+    rows, cols = matrix.shape
+    with open(output_file, 'w') as file:
+      grid = ''
+      for i in range(rows):
+        for j in range(cols):
+          for key, value in block_codification.items():
+            if value == matrix[i, j]:
+              grid += key
+              break
+        grid += '\n'
+      file.write(grid)
+            
     
 def create_initial_population(solutions, n_solutions):
   """
@@ -104,14 +119,7 @@ def custom_crossover(parents, crossover_probability):
     crossover_point = np.random.randint(1, num_cols)
     child = np
     
-if __name__=='__main__':
     
-    current_directory = str(os.getcwd)
-    originals_path = os.path.join(current_directory, "..", "levels", "originals")
-    solutions = []
-    solutions.append(create_encoded_matrix(os.path.join(originals_path, "lvl_1-1.txt"), block_codification))
-    solutions.append(create_encoded_matrix(os.path.join(originals_path, "lvl_1-2.txt"), block_codification))
     
-    initial_population = create_initial_population(solutions, 3)
-    print(initial_population)
+    
     
