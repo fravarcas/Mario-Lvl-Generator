@@ -1,5 +1,5 @@
 import os
-from validators.constantes import *
+from constantes import *
 
 def validate_beatable_pit(lvl):
 
