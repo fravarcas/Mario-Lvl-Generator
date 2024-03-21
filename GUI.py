@@ -400,7 +400,7 @@ def TOAD_GUI():
             rows = int(entry_rows.get())
             columns = int(entry_columns.get())
             floor_width = int(entry_floor_width.get())
-            path_lvl = dummy_generator(rows, columns, floor_width)
+            path_lvl = dummy_generator('levels/originals/dummy_lvl.txt' ,rows, columns, floor_width)
 
             generate_lvl_dummy(path_lvl)
 
@@ -442,7 +442,7 @@ def TOAD_GUI():
             elif pit_position + pit_length > columns:
                 messagebox.showerror("Error", "The length configuration is out of range for the column settings")
             else:
-                path_lvl = pit_lvl_generator(rows, columns, floor_width, pit_position, pit_length)
+                path_lvl = pit_lvl_generator('levels/originals/pit_lvl.txt', rows, columns, floor_width, pit_position, pit_length)
                 generate_lvl_dummy(path_lvl)
 
         secondary_window = tk.Toplevel(settings)
@@ -493,7 +493,7 @@ def TOAD_GUI():
             if not check_column_limit(wall_columns, columns):
                 messagebox.showerror("Error", "One of the columns is out of the limit of columns of the level")
             else:
-                path_lvl = wall_lvl_generator(rows, columns, floor_width, wall_columns)
+                path_lvl = wall_lvl_generator('levels/originals/wall_lvl.txt', rows, columns, floor_width, wall_columns)
 
             generate_lvl_dummy(path_lvl)
 

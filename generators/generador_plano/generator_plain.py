@@ -53,4 +53,4 @@ def wall_lvl_generator(file_path = os.path.join(originals_path, "lvl_pared.txt")
 
 if __name__=='__main__':
 
-    wall_lvl_generator(file_path= os.path.join(originals_path, "lvl_prueba.txt"),num_columns= 100, num_rows= 20, floor_width= 2)
+    wall_lvl_generator(num_columns=100, num_rows=20, floor_width=2)

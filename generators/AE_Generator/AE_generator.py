@@ -5,7 +5,7 @@ import functools
 import operator
 from project_settings import *
 import random
-#from validators.validadores_simples import *
+from validators.validadores_simples import *
 
 class AEGenerator:
   
