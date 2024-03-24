@@ -6,6 +6,7 @@ import operator
 from project_settings import *
 import random
 from validators.validadores_simples import *
+import tempfile
 
 class AEGenerator:
   
@@ -18,6 +19,8 @@ class AEGenerator:
      self.mutation_probability = mutation_probability
      self.mutation_by_replacement = mutation_by_replacement
      self.lvl_list = lvl_list
+     self.matrix_cols = 0
+     self.matrix_rows = 0
      self.block_codification = {
           'M': 1,
           'F': 2,
@@ -82,30 +85,38 @@ class AEGenerator:
           print(f"The file '{file_name}' was not found.")
           return None
         
-  def decode_matrix(self, matrix, block_codification, output_file):
+  def decode_matrix(self, matrix, block_codification):
     
       rows, cols = matrix.shape
-      with open(output_file, 'w') as file:
-        grid = ''
-        for i in range(rows):
-          for j in range(cols):
-            for key, value in block_codification.items():
-              if value == matrix[i, j]:
-                grid += key
-                break
-          grid += '\n'
-        file.write(grid)
+      with tempfile.TemporaryDirectory() as temp_dir:
+        output_file = os.path.join(temp_dir, 'decoded_matrix.txt')
+        with open(output_file, 'w') as file:
+          grid = ''
+          for i in range(rows):
+            for j in range(cols):
+              for key, value in block_codification.items():
+                if value == matrix[i, j]:
+                  grid += key
+                  break
+            grid += '\n'
+          file.write(grid)
+          
+      return output_file
         
-  def img2chromosome(self, img_arr):
+  def img2chromosome(img_arr):
 
-      return np.reshape(a=img_arr, newshape=(functools.reduce(operator.mul, img_arr.shape)))
+      transposed_arr = np.transpose(img_arr)
+      return np.reshape(a=transposed_arr, newshape=(functools.reduce(operator.mul, img_arr.shape)))
 
-  def chromosome2img(self, vector, shape):
-      # Check if the vector can be reshaped according to the specified shape.
-      if len(vector) != functools.reduce(operator.mul, shape):
-          raise ValueError("A vector of length {vector_length} into an array of shape {shape}.".format(vector_length=len(vector), shape=shape))
-
-      return np.reshape(a=vector, newshape=shape)
+  def chromosome2img(vector, shape):
+    # Check if the vector can be reshaped according to the specified shape.
+    if len(vector) != functools.reduce(operator.mul, shape):
+        raise ValueError("Cannot reshape a vector of length {vector_length} into an array of shape {shape}.".format(vector_length=len(vector), shape=shape))
+    
+    # Determine the original shape of the array based on the transposed shape.
+    original_shape = tuple(reversed(shape))
+    
+    return np.transpose(np.reshape(a=vector, newshape=original_shape))
     
   def mutation_function(self, offspring, ga_instance):
 
@@ -116,15 +127,24 @@ class AEGenerator:
     
       return offspring
     
-  def fitness_function():
+  def fitness_function(self, ga_instance, solution):
     
-    pass
+    decoded_solution = self.decode_matrix(self.chromosome2img(solution, (self.matrix_rows, self.matrix_cols)))
+    non_beatable_pits = validate_beatable_pit(decoded_solution)
+    non_beatable_walls = validate_beatable_walls(decoded_solution)
+    
+    fitness = non_beatable_pits + non_beatable_walls
+    return fitness
+    
     
   def generate_lvl(self) -> None:
     
     #Carga los niveles
     matrix_lvl1_original = self.create_encoded_matrix(self.lvl_list[0], self.block_codification)
     matrix_lvl2_original = self.create_encoded_matrix(self.lvl_list[1], self.block_codification)
+    
+    self.matrix_rows = matrix_lvl1_original.shape[0]
+    self.matrix_cols = matrix_lvl1_original.shape[1]
     
     #Combierte los niveles a arrays 1D
     matrix_lvl1_1D = self.img2chromosome(matrix_lvl1_original)
@@ -139,6 +159,7 @@ class AEGenerator:
     for _ in range(self.sol_per_pop//2):
       initial_pop = np.vstack((initial_pop, matrix_lvl2_1D))
       
+      
     #Crea la instancia pygad
     ga_instance = pygad.GA(
       num_generations=self.n_generations,
@@ -152,7 +173,7 @@ class AEGenerator:
       initial_population=initial_pop
       )
     
-    
+    print(str(self.fitness_function(self, ga_instance, initial_pop[0][:])))
 
 if __name__=='__main__':
   

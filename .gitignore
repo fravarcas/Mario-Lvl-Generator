@@ -1,4 +1,4 @@
-/venv
+/mario-venv
 /env
 /.idea
 *.xcf
@@ -6,3 +6,4 @@ __pycache__
 .DS_Store
 *.pyc
 /.vscode
+/Mario_Lvl_Generator.egg-info
