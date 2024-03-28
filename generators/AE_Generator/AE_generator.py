@@ -10,14 +10,17 @@ import tempfile
 
 class AEGenerator:
   
-  def __init__(self, n_generations, n_parents, sol_per_pop, parent_selection_type, mutation_probability, mutation_by_replacement, lvl_list) -> None:
+  def __init__(self, n_generations, n_parents, sol_per_pop, parent_selection_type, crossover_type, mutation_probability, mutation_by_replacement, mutation_type, gene_space, lvl_list) -> None:
      
      self.n_generations = n_generations
      self.n_parents = n_parents
+     self.gene_space = gene_space
      self.sol_per_pop = sol_per_pop
+     self.crossover_type = crossover_type
      self.parent_selection_type = parent_selection_type
      self.mutation_probability = mutation_probability
      self.mutation_by_replacement = mutation_by_replacement
+     self.mutation_type = mutation_type
      self.lvl_list = lvl_list
      self.matrix_cols = 0
      self.matrix_rows = 0
@@ -66,18 +69,15 @@ class AEGenerator:
           with open(file_name, 'r') as file:
               lines = file.readlines()
 
-              # Get the size of the matrix
               rows = len(lines)
               columns = len(lines[0].strip())
 
-              # Create the encoded matrix
               encoded_matrix = np.zeros((rows, columns), dtype=int)
-
-              # Fill the matrix with the corresponding encoding
+              
               for i in range(rows):
                   for j in range(columns):
                       character = lines[i][j]
-                      encoded_matrix[i, j] = encoding.get(character, 0)  # 0 if the character is not in the encoding
+                      encoded_matrix[i, j] = encoding.get(character, 34)  # 34 if the character is not in the encoding
 
               return encoded_matrix
 
@@ -85,30 +85,29 @@ class AEGenerator:
           print(f"The file '{file_name}' was not found.")
           return None
         
-  def decode_matrix(self, matrix, block_codification):
+  def decode_matrix(self, matrix, block_codification, dir):
     
       rows, cols = matrix.shape
-      with tempfile.TemporaryDirectory() as temp_dir:
-        output_file = os.path.join(temp_dir, 'decoded_matrix.txt')
-        with open(output_file, 'w') as file:
-          grid = ''
-          for i in range(rows):
-            for j in range(cols):
-              for key, value in block_codification.items():
-                if value == matrix[i, j]:
-                  grid += key
-                  break
-            grid += '\n'
-          file.write(grid)
+      output_file = os.path.join(dir, 'decoded_matrix.txt')
+      with open(output_file, 'w') as file:
+        grid = ''
+        for i in range(rows):
+          for j in range(cols):
+            for key, value in block_codification.items():
+              if value == matrix[i, j]:
+                grid += key
+                break
+          grid += '\n'
+        file.write(grid)
           
       return output_file
         
-  def img2chromosome(img_arr):
+  def img2chromosome(self, img_arr):
 
       transposed_arr = np.transpose(img_arr)
       return np.reshape(a=transposed_arr, newshape=(functools.reduce(operator.mul, img_arr.shape)))
 
-  def chromosome2img(vector, shape):
+  def chromosome2img(self, vector, shape):
     # Check if the vector can be reshaped according to the specified shape.
     if len(vector) != functools.reduce(operator.mul, shape):
         raise ValueError("Cannot reshape a vector of length {vector_length} into an array of shape {shape}.".format(vector_length=len(vector), shape=shape))
@@ -118,20 +117,12 @@ class AEGenerator:
     
     return np.transpose(np.reshape(a=vector, newshape=original_shape))
     
-  def mutation_function(self, offspring, ga_instance):
-
-      for chromosome_idx in range(offspring.shape[0]):
-        for gene in range(offspring.shape[1]):
-          if random.random() <= 0.1:
-            offspring[chromosome_idx, gene] = random.randint(1, 34)
+  def fitness_function(self, ga_instance, solution, solution_idx):
     
-      return offspring
-    
-  def fitness_function(self, ga_instance, solution):
-    
-    decoded_solution = self.decode_matrix(self.chromosome2img(solution, (self.matrix_rows, self.matrix_cols)))
-    non_beatable_pits = validate_beatable_pit(decoded_solution)
-    non_beatable_walls = validate_beatable_walls(decoded_solution)
+    with tempfile.TemporaryDirectory() as temp_dir:
+      decoded_solution = self.decode_matrix(self.chromosome2img(solution, (self.matrix_rows, self.matrix_cols)), self.block_codification, temp_dir)
+      non_beatable_pits = validate_beatable_pit(decoded_solution)
+      non_beatable_walls = validate_beatable_walls(decoded_solution)
     
     fitness = non_beatable_pits + non_beatable_walls
     return fitness
@@ -165,15 +156,23 @@ class AEGenerator:
       num_generations=self.n_generations,
       num_parents_mating=self.n_parents,
       fitness_func=self.fitness_function,
+      crossover_type=self.crossover_type,
       sol_per_pop=self.sol_per_pop,
       parent_selection_type=self.parent_selection_type,
-      mutation_type=self.mutation_function,
+      gene_space=self.gene_space,
+      mutation_type=self.mutation_type,
       mutation_probability=self.mutation_probability,
       mutation_by_replacement=self.mutation_by_replacement,
       initial_population=initial_pop
       )
     
-    print(str(self.fitness_function(self, ga_instance, initial_pop[0][:])))
+    ga_instance.run()
+    solution, solution_fitness, solution_idx = ga_instance.best_solution()
+    solution = self.chromosome2img(solution, (self.matrix_rows, self.matrix_cols))
+    print("Best solution : {solution}".format(solution=solution))
+    print("Best solution fitness : {solution_fitness}".format(solution_fitness=solution_fitness))
+    print("Best solution index : {solution_idx}".format(solution_idx=solution_idx))
+    self.decode_matrix(solution, self.block_codification, 'generators/AE_Generator/temp_dir')
 
 if __name__=='__main__':
   
@@ -186,6 +185,9 @@ if __name__=='__main__':
     n_parents=NUMBER_OF_PARENTS,
     sol_per_pop=SOL_PER_POP,
     parent_selection_type=PARENT_SELECTION_TYPE,
+    crossover_type=CROSSOVER_TYPE,
+    gene_space=GENE_SPACE,
+    mutation_type=MUTATION_TYPE,
     mutation_by_replacement=MUTATION_BY_REPLACEMENT,
     mutation_probability=MUTATION_PROBABILITY,
     lvl_list=lvl_list

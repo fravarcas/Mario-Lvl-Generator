@@ -21,6 +21,7 @@ def validate_beatable_pit(lvl):
     transpose_matrix = transpose_file(lvl)
     pit_list = []
     non_beatable_pit_count = 0
+    row_count = 0
 
     #Comprobar longitud de los fosos del mapa
     for i, transpose_row in enumerate(transpose_matrix):
