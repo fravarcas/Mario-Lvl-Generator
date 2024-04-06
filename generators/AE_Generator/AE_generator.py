@@ -27,43 +27,39 @@ class AEGenerator:
      self.block_codification = {
           'M': 1,
           'F': 2,
-          'y': 3,
-          'Y': 4,
-          'E': 5,
-          'g': 5,
-          'G': 6,
-          'k': 7,
-          'K': 8,
-          'r': 9,
-          'X': 10,
-          '#': 11,
-          '%': 12,
-          '|': 13,
-          '*': 14,
-          'B': 15,
-          'b': 16,
-          '?': 17,
-          '@': 17,
-          'Q': 18,
-          '!': 19,
-          '1': 20,
-          '2': 21,
-          'D': 22,
-          'S': 23,
-          'C': 24,
-          'U': 25,
-          'L': 26,
-          'o': 27,
-          't': 28,
-          'T': 29,
-          '<': 30,
-          '>': 31,
-          '[': 32,
-          ']': 33,
-          '-': 34
+          't': 3,
+          'T': 4,
+          '|': 5,
+          'E': 6,
+          'g': 7,
+          'G': 8,
+          'k': 9,
+          'K': 10,
+          'r': 11,
+          'X': 12,
+          '#': 13,
+          '%': 14,
+          '*': 15,
+          'B': 16,
+          'b': 17,
+          '?': 18,
+          '@': 19,
+          'Q': 20,
+          '!': 21,
+          '1': 22,
+          '2': 23,
+          'D': 24,
+          'S': 25,
+          'C': 26,
+          'U': 27,
+          'L': 28,
+          'o': 29,
+          'y': 30,
+          'Y': 31,
+          '-': 32
       }
 
-  def create_encoded_matrix(self, file_name, encoding):
+  def create_encoded_matrix(self, file_name, encoding : dict):
       
       try:
           with open(file_name, 'r') as file:
@@ -77,7 +73,7 @@ class AEGenerator:
               for i in range(rows):
                   for j in range(columns):
                       character = lines[i][j]
-                      encoded_matrix[i, j] = encoding.get(character, 34)  # 34 if the character is not in the encoding
+                      encoded_matrix[i, j] = encoding.get(character)
 
               return encoded_matrix
 
@@ -131,25 +127,21 @@ class AEGenerator:
   def generate_lvl(self) -> None:
     
     #Carga los niveles
-    matrix_lvl1_original = self.create_encoded_matrix(self.lvl_list[0], self.block_codification)
-    matrix_lvl2_original = self.create_encoded_matrix(self.lvl_list[1], self.block_codification)
+    matrix_original_levels = [self.create_encoded_matrix(x, self.block_codification) for x in self.lvl_list]
     
-    self.matrix_rows = matrix_lvl1_original.shape[0]
-    self.matrix_cols = matrix_lvl1_original.shape[1]
+    self.matrix_rows = matrix_original_levels[0].shape[0] #Calcula la altura de la imagen
+    self.matrix_cols = matrix_original_levels[0].shape[1] #Calcula la anchura de la imagen
     
-    #Combierte los niveles a arrays 1D
-    matrix_lvl1_1D = self.img2chromosome(matrix_lvl1_original)
-    matrix_lvl2_1D = self.img2chromosome(matrix_lvl2_original)
+    #convierte los niveles a arrays 1D
+    matrix_1D_levels = [self.img2chromosome(x) for x in matrix_original_levels]
     
-    #Combierte las matrices que representan los niveles en formato pygad para población inicial
-    initial_pop = np.empty((0, len(matrix_lvl1_1D)), dtype=int)
+    #convierte las matrices que representan los niveles en formato pygad para población inicial
+    initial_pop = np.empty((0, len(matrix_1D_levels[0])), dtype=int)
     
-    for _ in range(self.sol_per_pop//2):
-      initial_pop = np.vstack((initial_pop, matrix_lvl1_1D))
+    for i in range(self.sol_per_pop):
       
-    for _ in range(self.sol_per_pop//2):
-      initial_pop = np.vstack((initial_pop, matrix_lvl2_1D))
-      
+      level_index = i % len(matrix_1D_levels)
+      initial_pop = np.vstack((initial_pop, matrix_1D_levels[level_index]))
       
     #Crea la instancia pygad
     ga_instance = pygad.GA(
@@ -157,7 +149,6 @@ class AEGenerator:
       num_parents_mating=self.n_parents,
       fitness_func=self.fitness_function,
       crossover_type=self.crossover_type,
-      sol_per_pop=self.sol_per_pop,
       parent_selection_type=self.parent_selection_type,
       gene_space=self.gene_space,
       mutation_type=self.mutation_type,
@@ -169,16 +160,16 @@ class AEGenerator:
     ga_instance.run()
     solution, solution_fitness, solution_idx = ga_instance.best_solution()
     solution = self.chromosome2img(solution, (self.matrix_rows, self.matrix_cols))
-    print("Best solution : {solution}".format(solution=solution))
-    print("Best solution fitness : {solution_fitness}".format(solution_fitness=solution_fitness))
-    print("Best solution index : {solution_idx}".format(solution_idx=solution_idx))
-    self.decode_matrix(solution, self.block_codification, 'generators/AE_Generator/temp_dir')
+    return self.decode_matrix(solution, self.block_codification, 'levels/generated')
+    # print("Best solution : {solution}".format(solution=solution))
+    # print("Best solution fitness : {solution_fitness}".format(solution_fitness=solution_fitness))
+    # print("Best solution index : {solution_idx}".format(solution_idx=solution_idx))
 
 if __name__=='__main__':
   
   current_directory = str(os.getcwd)
   originals_path = os.path.join(current_directory, "..", "levels", "originals")
-  lvl_list = [os.path.join(originals_path, "lvl_2-1.txt"), os.path.join(originals_path, "lvl_3-1.txt")]
+  lvl_list = [os.path.join(originals_path, "lvl_2-1.txt"), os.path.join(originals_path, "lvl_3-1.txt"), os.path.join(originals_path, "lvl_4-1.txt")]
   
   generador = AEGenerator(
     n_generations=NUMBER_OF_GENERATIONS,

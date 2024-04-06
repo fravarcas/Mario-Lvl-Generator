@@ -4,7 +4,7 @@ from tkinter import filedialog as fd
 import tkinter as tk
 from PIL import ImageTk, Image, ImageDraw
 from py4j.java_gateway import JavaGateway
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 import os
 import platform
 import time
@@ -13,6 +13,8 @@ import queue
 import torch
 import math
 import sys
+from generators.AE_Generator.AE_generator import AEGenerator
+from project_settings import *
 
 from utils.scrollable_image import ScrollableImage
 from generators.generador_plano.generator_plain import dummy_generator, pit_lvl_generator, wall_lvl_generator
@@ -21,6 +23,18 @@ from utils.level_utils import read_level_from_file, one_hot_to_ascii_level, plac
 from utils.level_image_gen import LevelImageGen
 from utils.toad_gan_utils import load_trained_pyramid, generate_sample, TOADGAN_obj
 from utils.support_functions import check_column_limit
+
+# Common functions for windows
+
+def select_file(file_paths_list):
+    messagebox.showinfo("Info", "Select a level file, the levels must be of the same size")
+    file_options = {
+        'initialdir': './levels/originals/',
+        'filetypes': [('text files', '*.txt'), ('All files', '*.*')]
+    }
+    file_paths = list(filedialog.askopenfilenames(**file_options))
+    for file in file_paths:
+        file_paths_list.append(file)
 
 # Path to the AI Framework jar for Playing levels
 MARIO_AI_PATH = os.path.abspath(os.path.join(os.path.curdir, "Mario-AI-Framework/mario-1.0-SNAPSHOT.jar"))
@@ -524,7 +538,132 @@ def TOAD_GUI():
         entry_rows.bind("<Return>", do_event)
         entry_floor_width.bind("<Return>", do_event)
         entry_wall_positions.bind("<Return>", do_event)
+    
+    #Ventana de generador AE
+    
+    def AE_select_type_window():
+        
+        secondary_window = tk.Toplevel(settings)
+        secondary_window.title("AE generator type selection")
+        
+        standard_AE_button = ttk.Button(secondary_window, text="standard AE generator", command=AE_standard_generator_window)
+        standard_AE_button.grid(row=8, column=1, padx=10, pady=5)
+        
+        parametres_AE_button = ttk.Button(secondary_window, text="parametrized AE generator", command=AE_parametres_window)
+        parametres_AE_button.grid(row=9, column=1, padx=10, pady=5)
+        
+    def AE_standard_generator_window():
+        
+        file_paths_list = []
+        
+        def read_levels():
+            
+            select_file(file_paths_list)
+            
+        def do_event():
+            
+            generator = AEGenerator(
+                n_generations=NUMBER_OF_GENERATIONS,
+                n_parents=NUMBER_OF_PARENTS,
+                parent_selection_type=PARENT_SELECTION_TYPE,
+                sol_per_pop=SOL_PER_POP,
+                crossover_type=CROSSOVER_TYPE,
+                gene_space=GENE_SPACE,
+                mutation_type=MUTATION_TYPE,
+                mutation_by_replacement=MUTATION_BY_REPLACEMENT,
+                mutation_probability=MUTATION_PROBABILITY,
+                lvl_list=file_paths_list
+            )
+            generator.generate_lvl()
+            
+            generate_lvl_dummy("levels/generated/decoded_matrix.txt")
+        
+        secondary_window = tk.Toplevel(settings)
+        secondary_window.title("AE generator type selection")
+        
+        label1 = ttk.Label(secondary_window, text="levels to use:")
+        label1.grid(row=0, column=0, padx=10, pady=5)
+        button_levels = ttk.Button(secondary_window, text="Select levels", command=read_levels)
+        button_levels.grid(row=0, column=1, padx=10, pady=5)
+        
+        accept_button = ttk.Button(secondary_window, text="Accept", command=do_event)
+        accept_button.grid(row=8, column=1, padx=10, pady=5)
+    
+    def AE_parametres_window():
+        
+        file_paths_list = []
+        
+        def read_levels():
+            
+            select_file(file_paths_list)
+        
+        def do_event():
 
+            levels = file_paths_list
+            mutation_probability = float(entry_mut_prob.get())
+            generations = int(entry_generations.get())
+            n_parents = int(entry_n_parents.get())
+            sol_per_pop = int(entry_sol_per_pop.get())
+            crossover_type = entry_crossover_type.get()
+            parent_sel_type = entry_parent_sel_type.get()
+
+            generator = AEGenerator(
+                n_generations=generations,
+                n_parents=n_parents,
+                parent_selection_type=parent_sel_type,
+                sol_per_pop=sol_per_pop,
+                crossover_type=crossover_type,
+                gene_space=GENE_SPACE,
+                mutation_type=MUTATION_TYPE,
+                mutation_by_replacement=MUTATION_BY_REPLACEMENT,
+                mutation_probability=mutation_probability,
+                lvl_list=levels
+            )
+            generator.generate_lvl()
+
+            generate_lvl_dummy("levels/generated/decoded_matrix.txt")
+
+        secondary_window = tk.Toplevel(settings)
+        secondary_window.title("AE generator settings")
+
+        label1 = ttk.Label(secondary_window, text="levels to use:")
+        label1.grid(row=0, column=0, padx=10, pady=5)
+        button_levels = ttk.Button(secondary_window, text="Select levels", command=read_levels)
+        button_levels.grid(row=0, column=1, padx=10, pady=5)
+
+        label2 = ttk.Label(secondary_window, text="Mutation probability:")
+        label2.grid(row=1, column=0, padx=10, pady=5)
+        entry_mut_prob = ttk.Entry(secondary_window)
+        entry_mut_prob.grid(row=1, column=1, padx=10, pady=5)
+
+        label3 = ttk.Label(secondary_window, text="Number of generations:")
+        label3.grid(row=2, column=0, padx=10, pady=5)
+        entry_generations = ttk.Entry(secondary_window)
+        entry_generations.grid(row=2, column=1, padx=10, pady=5)
+
+        label4 = ttk.Label(secondary_window, text="Number of parents:")
+        label4.grid(row=3, column=0, padx=10, pady=5)
+        entry_n_parents = ttk.Entry(secondary_window)
+        entry_n_parents.grid(row=3, column=1, padx=10, pady=5)
+        
+        label5 = ttk.Label(secondary_window, text="sol per population:")
+        label5.grid(row=4, column=0, padx=10, pady=5)
+        entry_sol_per_pop = ttk.Entry(secondary_window)
+        entry_sol_per_pop.grid(row=4, column=1, padx=10, pady=5)
+        
+        label6 = ttk.Label(secondary_window, text="Crossover type:")
+        label6.grid(row=5, column=0, padx=10, pady=5)
+        entry_crossover_type = ttk.Combobox(secondary_window, values=["single_point", "two_points"])
+        entry_crossover_type.grid(row=5, column=1, padx=10, pady=5)
+        
+        label7 = ttk.Label(secondary_window, text="Parent selection type:")
+        label7.grid(row=6, column=0, padx=10, pady=5)
+        entry_parent_sel_type = ttk.Combobox(secondary_window, values=["sss", "rws", "sus", "rank", "random", "tournament"])
+        entry_parent_sel_type.grid(row=6, column=1, padx=10, pady=5)
+
+        accept_button = ttk.Button(secondary_window, text="Accept", command=do_event)
+        accept_button.grid(row=8, column=1, padx=10, pady=5)
+        
 
     # Top Buttons
     load_lev_button = ttk.Button(settings, compound='top', image=load_level_icon, width=35,
@@ -536,6 +675,7 @@ def TOAD_GUI():
     gen_button = ttk.Button(settings, compound='top', image=generate_level_icon,
                             text='Generate level', state='disabled', command=lambda: spawn_thread(q, generate))
     gen_dummy = ttk.Button(settings, compound='top',text='Generate dummy level', width=35, command=open_generate_dummy_window)
+    gen_AE_lvl = ttk.Button(settings, compound='top',text='Generate level using AE', width=35, command=AE_select_type_window)
 
     # Size Entries
     size_frame = ttk.Frame(settings, padding=(1, 1, 1, 1))
@@ -657,6 +797,7 @@ def TOAD_GUI():
     image_label.grid(column=0, row=6, columnspan=4, sticky=(N, E, W), padx=5, pady=8)
     p_c_frame.grid(column=1, row=7, columnspan=2, sticky=(N, S, E, W), padx=5, pady=5)
     gen_dummy.grid(column=0, row=90, columnspan=4, sticky=(S, E, W), padx=5, pady=5)
+    gen_AE_lvl.grid(column=0, row=91, columnspan=4, sticky=(S, E, W), padx=5, pady=5)
     fpath_label.grid(column=0, row=99, columnspan=4, sticky=(S, E, W), padx=5, pady=5)
     error_label.grid(column=0, row=100, columnspan=4, sticky=(S, E, W), padx=5, pady=1)
     size_frame.grid(column=1, row=5, columnspan=1, sticky=(N, S), padx=5, pady=2)

@@ -80,8 +80,8 @@ def validate_beatable_walls(lvl):
 
 if __name__== '__main__':
 
-    lvl = 'levels/originals/lvl_1-1.txt'
-    validate_beatable_walls(lvl)
+    lvl = 'levels/originals/lvl_2-1.txt'
+    print(validate_beatable_walls(lvl))
     
     
 
