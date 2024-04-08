@@ -7,6 +7,7 @@ from project_settings import *
 import random
 from validators.validadores_simples import *
 import tempfile
+from utils.support_functions import euclidean_distance, occurrence_vector
 
 class AEGenerator:
   
@@ -31,80 +32,80 @@ class AEGenerator:
           'T': 4,
           '|': 5,
           'E': 6,
-          'g': 7,
-          'G': 8,
-          'k': 9,
-          'K': 10,
-          'r': 11,
-          'X': 12,
-          '#': 13,
-          '%': 14,
-          '*': 15,
-          'B': 16,
-          'b': 17,
-          '?': 18,
-          '@': 19,
-          'Q': 20,
-          '!': 21,
-          '1': 22,
-          '2': 23,
-          'D': 24,
-          'S': 25,
-          'C': 26,
-          'U': 27,
-          'L': 28,
-          'o': 29,
-          'y': 30,
-          'Y': 31,
-          '-': 32
+          'g': 6,
+          'G': 7,
+          'k': 8,
+          'K': 9,
+          'r': 10,
+          'X': 11,
+          '#': 12,
+          '%': 13,
+          '*': 14,
+          'B': 15,
+          'b': 16,
+          '?': 17,
+          '@': 17,
+          'Q': 18,
+          '!': 18,
+          '1': 19,
+          '2': 20,
+          'D': 21,
+          'S': 22,
+          'C': 23,
+          'U': 24,
+          'L': 25,
+          'o': 26,
+          'y': 27,
+          'Y': 28,
+          '-': 29
       }
 
   def create_encoded_matrix(self, file_name, encoding : dict):
       
-      try:
-          with open(file_name, 'r') as file:
-              lines = file.readlines()
+    try:
+        with open(file_name, 'r') as file:
+            lines = file.readlines()
 
-              rows = len(lines)
-              columns = len(lines[0].strip())
+            rows = len(lines)
+            columns = len(lines[0].strip())
 
-              encoded_matrix = np.zeros((rows, columns), dtype=int)
-              
-              for i in range(rows):
-                  for j in range(columns):
-                      character = lines[i][j]
-                      encoded_matrix[i, j] = encoding.get(character)
+            encoded_matrix = np.zeros((rows, columns), dtype=int)
+            
+            for i in range(rows):
+                for j in range(columns):
+                    character = lines[i][j]
+                    encoded_matrix[i, j] = encoding.get(character)
 
-              return encoded_matrix
+            return encoded_matrix
 
-      except FileNotFoundError:
-          print(f"The file '{file_name}' was not found.")
-          return None
+    except FileNotFoundError:
+        print(f"The file '{file_name}' was not found.")
+        return None
         
   def decode_matrix(self, matrix, block_codification, dir):
     
-      rows, cols = matrix.shape
-      output_file = os.path.join(dir, 'decoded_matrix.txt')
-      with open(output_file, 'w') as file:
-        grid = ''
-        for i in range(rows):
-          for j in range(cols):
-            for key, value in block_codification.items():
-              if value == matrix[i, j]:
-                grid += key
-                break
-          grid += '\n'
-        file.write(grid)
-          
-      return output_file
+    rows, cols = matrix.shape
+    output_file = os.path.join(dir, 'decoded_matrix.txt')
+    with open(output_file, 'w') as file:
+      grid = ''
+      for i in range(rows):
+        for j in range(cols):
+          for key, value in block_codification.items():
+            if value == matrix[i, j]:
+              grid += key
+              break
+        grid += '\n'
+      file.write(grid)
+        
+    return output_file
         
   def img2chromosome(self, img_arr):
 
-      transposed_arr = np.transpose(img_arr)
-      return np.reshape(a=transposed_arr, newshape=(functools.reduce(operator.mul, img_arr.shape)))
+    transposed_arr = np.transpose(img_arr)
+    return np.reshape(a=transposed_arr, newshape=(functools.reduce(operator.mul, img_arr.shape)))
 
   def chromosome2img(self, vector, shape):
-    # Check if the vector can be reshaped according to the specified shape.
+    
     if len(vector) != functools.reduce(operator.mul, shape):
         raise ValueError("Cannot reshape a vector of length {vector_length} into an array of shape {shape}.".format(vector_length=len(vector), shape=shape))
     
@@ -112,6 +113,14 @@ class AEGenerator:
     original_shape = tuple(reversed(shape))
     
     return np.transpose(np.reshape(a=vector, newshape=original_shape))
+  
+  def fitness_function_v2(self, ga_instance, solution, solution_idx):
+    
+    solution_block_ocurrences = occurrence_vector(solution)
+    distance = euclidean_distance(self.original_lvl_occurrences, solution_block_ocurrences)
+    fitness = 1.0 / (1.0 + distance)
+    
+    return fitness
     
   def fitness_function(self, ga_instance, solution, solution_idx):
     
@@ -120,20 +129,22 @@ class AEGenerator:
       non_beatable_pits = validate_beatable_pit(decoded_solution)
       non_beatable_walls = validate_beatable_walls(decoded_solution)
     
-    fitness = non_beatable_pits + non_beatable_walls
+    non_beatable_elements = non_beatable_pits + non_beatable_walls
+    fitness = 1.0 / (1.0 + non_beatable_elements)
     return fitness
-    
     
   def generate_lvl(self) -> None:
     
     #Carga los niveles
     matrix_original_levels = [self.create_encoded_matrix(x, self.block_codification) for x in self.lvl_list]
     
-    self.matrix_rows = matrix_original_levels[0].shape[0] #Calcula la altura de la imagen
-    self.matrix_cols = matrix_original_levels[0].shape[1] #Calcula la anchura de la imagen
+    #Calcula las dimensiones con las que se va a trabajar
+    self.matrix_rows = matrix_original_levels[0].shape[0]
+    self.matrix_cols = matrix_original_levels[0].shape[1] 
     
     #convierte los niveles a arrays 1D
     matrix_1D_levels = [self.img2chromosome(x) for x in matrix_original_levels]
+    self.original_lvl_occurrences = occurrence_vector(matrix_1D_levels[0])
     
     #convierte las matrices que representan los niveles en formato pygad para población inicial
     initial_pop = np.empty((0, len(matrix_1D_levels[0])), dtype=int)
@@ -154,16 +165,17 @@ class AEGenerator:
       mutation_type=self.mutation_type,
       mutation_probability=self.mutation_probability,
       mutation_by_replacement=self.mutation_by_replacement,
-      initial_population=initial_pop
+      initial_population=initial_pop,
       )
     
     ga_instance.run()
     solution, solution_fitness, solution_idx = ga_instance.best_solution()
     solution = self.chromosome2img(solution, (self.matrix_rows, self.matrix_cols))
+    print("Best solution : {solution}".format(solution=solution))
+    print("Best solution fitness : {solution_fitness}".format(solution_fitness=solution_fitness))
+    print("Best solution index : {solution_idx}".format(solution_idx=solution_idx))
     return self.decode_matrix(solution, self.block_codification, 'levels/generated')
-    # print("Best solution : {solution}".format(solution=solution))
-    # print("Best solution fitness : {solution_fitness}".format(solution_fitness=solution_fitness))
-    # print("Best solution index : {solution_idx}".format(solution_idx=solution_idx))
+    
 
 if __name__=='__main__':
   
