@@ -169,11 +169,8 @@ class AEGenerator:
       )
     
     ga_instance.run()
-    solution, solution_fitness, solution_idx = ga_instance.best_solution()
+    solution, _, _ = ga_instance.best_solution()
     solution = self.chromosome2img(solution, (self.matrix_rows, self.matrix_cols))
-    print("Best solution : {solution}".format(solution=solution))
-    print("Best solution fitness : {solution_fitness}".format(solution_fitness=solution_fitness))
-    print("Best solution index : {solution_idx}".format(solution_idx=solution_idx))
     return self.decode_matrix(solution, self.block_codification, 'levels/generated')
     
 

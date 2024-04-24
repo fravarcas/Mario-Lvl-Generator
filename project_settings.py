@@ -1,7 +1,7 @@
 #Mario properties
 
 MAX_HORIZONTAL_JUMP_LENGTH = 11
-MAX_VERTICAL_JUMP_LENGTH= 4
+MAX_VERTICAL_JUMP_LENGTH = 4
 
 #AE_GEnerator standard parametres
 
