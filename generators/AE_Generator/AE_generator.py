@@ -11,10 +11,9 @@ from utils.support_functions import euclidean_distance, occurrence_vector
 
 class AEGenerator:
   
-  def __init__(self, n_generations, n_parents, sol_per_pop, parent_selection_type, crossover_type, mutation_probability, mutation_by_replacement, mutation_type, gene_space, lvl_list) -> None:
+  def __init__(self, n_generations, sol_per_pop, parent_selection_type, crossover_type, mutation_probability, mutation_by_replacement, mutation_type, gene_space, lvl_list) -> None:
      
      self.n_generations = n_generations
-     self.n_parents = n_parents
      self.gene_space = gene_space
      self.sol_per_pop = sol_per_pop
      self.crossover_type = crossover_type
@@ -107,7 +106,7 @@ class AEGenerator:
   def chromosome2img(self, vector, shape):
     
     if len(vector) != functools.reduce(operator.mul, shape):
-        raise ValueError("Cannot reshape a vector of length {vector_length} into an array of shape {shape}.".format(vector_length=len(vector), shape=shape))
+      raise ValueError("Cannot reshape a vector of length {vector_length} into an array of shape {shape}.".format(vector_length=len(vector), shape=shape))
     
     # Determine the original shape of the array based on the transposed shape.
     original_shape = tuple(reversed(shape))
@@ -118,7 +117,10 @@ class AEGenerator:
     
     solution_block_ocurrences = occurrence_vector(solution)
     distance = euclidean_distance(self.original_lvl_occurrences, solution_block_ocurrences)
-    fitness = 1.0 / (1.0 + distance)
+    if distance == 0:
+      fitness = 1.0 / (1.0 + distance + 90)
+    else:
+      fitness = 1.0 / (1.0 + distance)
     
     return fitness
     
@@ -132,6 +134,7 @@ class AEGenerator:
     non_beatable_elements = non_beatable_pits + non_beatable_walls
     fitness = 1.0 / (1.0 + non_beatable_elements)
     return fitness
+  
     
   def generate_lvl(self) -> None:
     
@@ -154,11 +157,13 @@ class AEGenerator:
       level_index = i % len(matrix_1D_levels)
       initial_pop = np.vstack((initial_pop, matrix_1D_levels[level_index]))
       
+    pop_size = initial_pop.shape[0]
+      
     #Crea la instancia pygad
     ga_instance = pygad.GA(
       num_generations=self.n_generations,
-      num_parents_mating=self.n_parents,
-      fitness_func=self.fitness_function,
+      num_parents_mating=pop_size,
+      fitness_func=self.fitness_function_v2,
       crossover_type=self.crossover_type,
       parent_selection_type=self.parent_selection_type,
       gene_space=self.gene_space,
@@ -182,7 +187,6 @@ if __name__=='__main__':
   
   generador = AEGenerator(
     n_generations=NUMBER_OF_GENERATIONS,
-    n_parents=NUMBER_OF_PARENTS,
     sol_per_pop=SOL_PER_POP,
     parent_selection_type=PARENT_SELECTION_TYPE,
     crossover_type=CROSSOVER_TYPE,
