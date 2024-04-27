@@ -96,7 +96,7 @@ def rebuild_lvl_walls(lvl):
             wall_unevenness = wall[1]
             wall_start_column = [line[wall_column_index] for line in matrix]
             
-            # Find the first ground block before the pit
+            # Find the first block of the wall
             indexes = []
             for ground_character in GROUND_CHARACTERS:
                 if ground_character in wall_start_column:
@@ -166,3 +166,4 @@ def detect_walls(lvl):
 
 if __name__ == '__main__':
     rebuild_lvl_walls('levels/originals/lvl_pared.txt')
+    rebuild_lvl_pits('levels/originals/pit_lvl.txt')

@@ -564,7 +564,6 @@ def TOAD_GUI():
             
             generator = AEGenerator(
                 n_generations=NUMBER_OF_GENERATIONS,
-                n_parents=NUMBER_OF_PARENTS,
                 parent_selection_type=PARENT_SELECTION_TYPE,
                 sol_per_pop=SOL_PER_POP,
                 crossover_type=CROSSOVER_TYPE,
@@ -602,14 +601,12 @@ def TOAD_GUI():
             levels = file_paths_list
             mutation_probability = float(entry_mut_prob.get())
             generations = int(entry_generations.get())
-            n_parents = int(entry_n_parents.get())
             sol_per_pop = int(entry_sol_per_pop.get())
             crossover_type = entry_crossover_type.get()
             parent_sel_type = entry_parent_sel_type.get()
 
             generator = AEGenerator(
                 n_generations=generations,
-                n_parents=n_parents,
                 parent_selection_type=parent_sel_type,
                 sol_per_pop=sol_per_pop,
                 crossover_type=crossover_type,
@@ -640,11 +637,6 @@ def TOAD_GUI():
         label3.grid(row=2, column=0, padx=10, pady=5)
         entry_generations = ttk.Entry(secondary_window)
         entry_generations.grid(row=2, column=1, padx=10, pady=5)
-
-        label4 = ttk.Label(secondary_window, text="Number of parents:")
-        label4.grid(row=3, column=0, padx=10, pady=5)
-        entry_n_parents = ttk.Entry(secondary_window)
-        entry_n_parents.grid(row=3, column=1, padx=10, pady=5)
         
         label5 = ttk.Label(secondary_window, text="sol per population:")
         label5.grid(row=4, column=0, padx=10, pady=5)

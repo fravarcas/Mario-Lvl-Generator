@@ -7,7 +7,7 @@ from project_settings import *
 import random
 from validators.validadores_simples import *
 import tempfile
-from utils.support_functions import euclidean_distance, occurrence_vector
+from utils.support_functions import euclidean_distance, occurrence_vector, rebuild_lvl_pits, rebuild_lvl_walls
 
 class AEGenerator:
   
@@ -117,7 +117,7 @@ class AEGenerator:
     
     solution_block_ocurrences = occurrence_vector(solution)
     distance = euclidean_distance(self.original_lvl_occurrences, solution_block_ocurrences)
-    if distance == 0:
+    if distance <= 30:
       fitness = 1.0 / (1.0 + distance + 90)
     else:
       fitness = 1.0 / (1.0 + distance)
@@ -134,7 +134,6 @@ class AEGenerator:
     non_beatable_elements = non_beatable_pits + non_beatable_walls
     fitness = 1.0 / (1.0 + non_beatable_elements)
     return fitness
-  
     
   def generate_lvl(self) -> None:
     
@@ -148,6 +147,7 @@ class AEGenerator:
     #convierte los niveles a arrays 1D
     matrix_1D_levels = [self.img2chromosome(x) for x in matrix_original_levels]
     self.original_lvl_occurrences = occurrence_vector(matrix_1D_levels[0])
+    
     
     #convierte las matrices que representan los niveles en formato pygad para población inicial
     initial_pop = np.empty((0, len(matrix_1D_levels[0])), dtype=int)
@@ -176,7 +176,9 @@ class AEGenerator:
     ga_instance.run()
     solution, _, _ = ga_instance.best_solution()
     solution = self.chromosome2img(solution, (self.matrix_rows, self.matrix_cols))
-    return self.decode_matrix(solution, self.block_codification, 'levels/generated')
+    self.decode_matrix(solution, self.block_codification, 'levels/generated')
+    rebuild_lvl_pits('levels/generated/decoded_matrix.txt')
+    rebuild_lvl_walls('levels/generated/decoded_matrix.txt')
     
 
 if __name__=='__main__':
