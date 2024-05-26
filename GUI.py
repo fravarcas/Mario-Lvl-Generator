@@ -15,6 +15,7 @@ import math
 import sys
 from generators.AE_Generator.AE_generator import AEGenerator
 from project_settings import *
+import subprocess
 
 from utils.scrollable_image import ScrollableImage
 from generators.generador_plano.generator_plain import dummy_generator, pit_lvl_generator, wall_lvl_generator
@@ -325,7 +326,8 @@ def TOAD_GUI():
             game.initVisuals(2.0)
             agent = gateway.jvm.agents.human.Agent()
             game.setAgent(agent)
-            while True:
+            perc = 0
+            while perc != 100:
                 result = game.gameLoop(''.join(level_obj.ascii_level), 200, 0, True, 30)
                 perc = int(result.getCompletionPercentage() * 100)
                 error_msg.set("Level Played. Completion Percentage: %d%%" % perc)
@@ -334,7 +336,36 @@ def TOAD_GUI():
             is_loaded.set(True)
             use_gen.set(remember_use_gen)
         finally:
-            game.getWindow().dispose()
+            gateway.java_process.kill()
+            gateway.close()
+
+        is_loaded.set(True)
+        use_gen.set(remember_use_gen)  # only set use_gen to True if it was previously
+        return
+    def verify_level():
+        error_msg.set("Playing level...")
+        is_loaded.set(False)
+        remember_use_gen = use_gen.get()
+        use_gen.set(False)
+        # Py4j Java bridge uses Mario AI Framework
+        gateway = JavaGateway.launch_gateway(classpath=MARIO_AI_PATH, die_on_exit=True, redirect_stdout=sys.stdout, redirect_stderr=sys.stderr)
+        game = gateway.jvm.engine.core.MarioGame()
+        try:
+            game.initVisuals(2.0)
+            agent = gateway.jvm.agents.robinBaumgarten.Agent()
+            game.setAgent(agent)
+            perc = 0
+            i = 0
+            while perc != 100 and i < 100:
+                result = game.gameLoop(''.join(level_obj.ascii_level), 200, 0, True, 30)
+                perc = int(result.getCompletionPercentage() * 100)
+                error_msg.set("Level Played. Completion Percentage: %d%%" % perc)
+                i += 1
+        except Exception:
+            error_msg.set("Level Play was interrupted.")
+            is_loaded.set(True)
+            use_gen.set(remember_use_gen)
+        finally:
             gateway.java_process.kill()
             gateway.close()
 
@@ -711,6 +742,8 @@ def TOAD_GUI():
     p_c_frame = ttk.Frame(settings)
     play_button = ttk.Button(p_c_frame, compound='top', image=play_level_icon, text='Play level',
                              state='disabled', command=lambda: spawn_thread(q, play_level))
+    test_lvl_button = ttk.Button(p_c_frame, compound='top', image=play_level_icon, text='Verify level',
+                             state='disabled', command=lambda: spawn_thread(q, verify_level))
 
     # Level Preview image
     image_label = ScrollableImage(settings, image=levelimage, height=271)
@@ -752,6 +785,7 @@ def TOAD_GUI():
     def set_play_state(t1, t2, t3):
         if is_loaded.get():
             play_button.state(['!disabled'])
+            test_lvl_button.state(['!disabled'])
             image_label.change_image(level_obj.image)
         else:
             play_button.state(['disabled'])
@@ -802,6 +836,7 @@ def TOAD_GUI():
 
     # On p_c_frame:
     play_button.grid(column=1, row=0, sticky=(N, S, E, W), padx=5, pady=5)
+    test_lvl_button.grid(column=1, row=1, sticky=(N, S, E, W), padx=5, pady=5)
     controls_frame.grid(column=2, row=0, sticky=(N, S, E, W), padx=5, pady=5)
 
     # On controls_frame
