@@ -127,6 +127,8 @@ def TOAD_GUI():
 
     level_l = IntVar()
     level_h = IntVar()
+    show_visuals_var = IntVar()
+    show_visuals_var.set(1)
     load_string_gen = StringVar()
     load_string_txt = StringVar()
     error_msg = StringVar()
@@ -345,6 +347,9 @@ def TOAD_GUI():
     def verify_level():
         error_msg.set("Playing level...")
         is_loaded.set(False)
+        visuals_on = False
+        if show_visuals_var.get() == 1:
+            visuals_on = True
         remember_use_gen = use_gen.get()
         use_gen.set(False)
         # Py4j Java bridge uses Mario AI Framework
@@ -355,12 +360,15 @@ def TOAD_GUI():
             agent = gateway.jvm.agents.robinBaumgarten.Agent()
             game.setAgent(agent)
             perc = 0
+            max_perc = 0
             i = 0
-            while perc != 100 and i < 100:
-                result = game.gameLoop(''.join(level_obj.ascii_level), 200, 0, True, 30)
+            while perc != 100 and i < 5:
+                result = game.gameLoop(''.join(level_obj.ascii_level), 200, 0, visuals_on, 30)
                 perc = int(result.getCompletionPercentage() * 100)
-                error_msg.set("Level Played. Completion Percentage: %d%%" % perc)
+                if perc > max_perc:
+                    max_perc = perc
                 i += 1
+            error_msg.set("Level Played. Max completion Percentage reached: %d%%, Number of attempts needed: %d" % (max_perc, i))
         except Exception:
             error_msg.set("Level Play was interrupted.")
             is_loaded.set(True)
@@ -577,15 +585,16 @@ def TOAD_GUI():
         secondary_window = tk.Toplevel(settings)
         secondary_window.title("AE generator type selection")
         
-        standard_AE_button = ttk.Button(secondary_window, text="standard AE generator", command=AE_standard_generator_window)
+        standard_AE_button = ttk.Button(secondary_window, text="standard AE generator", command=lambda: AE_standard_generator_window(secondary_window))
         standard_AE_button.grid(row=8, column=1, padx=10, pady=5)
         
-        parametres_AE_button = ttk.Button(secondary_window, text="parametrized AE generator", command=AE_parametres_window)
+        parametres_AE_button = ttk.Button(secondary_window, text="parametrized AE generator", command=lambda: AE_parametres_window(secondary_window))
         parametres_AE_button.grid(row=9, column=1, padx=10, pady=5)
         
-    def AE_standard_generator_window():
+    def AE_standard_generator_window(secondary_window):
         
         file_paths_list = []
+        secondary_window.destroy()
         
         def read_levels():
             
@@ -607,6 +616,7 @@ def TOAD_GUI():
             generator.generate_lvl()
             
             generate_lvl_dummy("levels/generated/decoded_matrix.txt")
+            secondary_window.destroy()
         
         secondary_window = tk.Toplevel(settings)
         secondary_window.title("AE generator type selection")
@@ -619,9 +629,10 @@ def TOAD_GUI():
         accept_button = ttk.Button(secondary_window, text="Accept", command=do_event)
         accept_button.grid(row=8, column=1, padx=10, pady=5)
     
-    def AE_parametres_window():
+    def AE_parametres_window(secondary_window):
         
         file_paths_list = []
+        secondary_window.destroy()
         
         def read_levels():
             
@@ -650,6 +661,8 @@ def TOAD_GUI():
             generator.generate_lvl()
 
             generate_lvl_dummy("levels/generated/decoded_matrix.txt")
+            secondary_window.destroy()
+            
 
         secondary_window = tk.Toplevel(settings)
         secondary_window.title("AE generator settings")
@@ -744,6 +757,8 @@ def TOAD_GUI():
                              state='disabled', command=lambda: spawn_thread(q, play_level))
     test_lvl_button = ttk.Button(p_c_frame, compound='top', image=play_level_icon, text='Verify level',
                              state='disabled', command=lambda: spawn_thread(q, verify_level))
+    show_visuals = ttk.Checkbutton(p_c_frame, text='Show Visuals', variable=show_visuals_var)
+    
 
     # Level Preview image
     image_label = ScrollableImage(settings, image=levelimage, height=271)
@@ -837,6 +852,7 @@ def TOAD_GUI():
     # On p_c_frame:
     play_button.grid(column=1, row=0, sticky=(N, S, E, W), padx=5, pady=5)
     test_lvl_button.grid(column=1, row=1, sticky=(N, S, E, W), padx=5, pady=5)
+    show_visuals.grid(column=1, row=2, sticky=(N, S, E, W), padx=5, pady=5)
     controls_frame.grid(column=2, row=0, sticky=(N, S, E, W), padx=5, pady=5)
 
     # On controls_frame
