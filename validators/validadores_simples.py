@@ -5,14 +5,14 @@ import numpy as np
 def transpose_file(input_file):
         
     with open(input_file, 'r') as file:
-        filas = [line.strip() for line in file.readlines()]
+        rows = [line.strip() for line in file.readlines()]
 
    
-    num_filas = len(filas)
-    num_columnas = len(filas[0])
-    matriz_transpuesta = [''.join(filas[j][i] for j in range(num_filas)) for i in range(num_columnas)]
+    num_rows = len(rows)
+    num_columns = len(rows[0])
+    transposed_matrix = [''.join(rows[j][i] for j in range(num_rows)) for i in range(num_columns)]
    
-    return matriz_transpuesta
+    return transposed_matrix
 
 def count_wall_length(column, ground_characters):
     """

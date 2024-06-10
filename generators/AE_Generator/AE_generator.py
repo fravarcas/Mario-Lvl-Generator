@@ -148,7 +148,6 @@ class AEGenerator:
     matrix_1D_levels = [self.img2chromosome(x) for x in matrix_original_levels]
     self.original_lvl_occurrences = occurrence_vector(matrix_1D_levels[0])
     
-    
     #convierte las matrices que representan los niveles en formato pygad para población inicial
     initial_pop = np.empty((0, len(matrix_1D_levels[0])), dtype=int)
     
